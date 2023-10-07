@@ -39,6 +39,12 @@ export default class Crossword extends H5P.Question {
         scoreWords: true,
         applyPenalties: false
       },
+      currikisettings: {
+        disableSubmitButton: false,
+        currikil10n: {
+          submitAnswer: "Submit"
+        }
+      },
       l10n: {
         across: 'across',
         down: 'down',
@@ -95,7 +101,8 @@ export default class Crossword extends H5P.Question {
     this.initialButtons = {
       check: !this.params.behaviour.enableInstantFeedback,
       showSolution: this.params.behaviour.enableSolutionsButton,
-      retry: this.params.behaviour.enableRetry
+      retry: this.params.behaviour.enableRetry,
+      submit: !this.params.currikisettings.disableSubmitButton
     };
 
     const defaultLanguage = (extras.metadata) ? extras.metadata.defaultLanguage || 'en' : 'en';
@@ -128,6 +135,13 @@ export default class Crossword extends H5P.Question {
         word.clue = Util.stripHTML(Util.htmlDecode(word.clue));
         return word;
       });
+
+
+    this.on('turnInCancelled', () => {
+      if (!this.params.currikisettings.disableSubmitButton && this.isRoot()) {
+        this.showButton('submit-answer');
+      }
+    });
   }
 
   /**
@@ -205,6 +219,8 @@ export default class Crossword extends H5P.Question {
     this.on('resize', () => {
       this.content.resize();
     });
+
+    this.hideButton('submit-answer');
   }
 
   /**
@@ -235,6 +251,15 @@ export default class Crossword extends H5P.Question {
     }, this.initialButtons.retry, {
       'aria-label': this.params.a11y.retry
     }, {});
+
+    // Show submit button
+    if (!this.params.currikisettings.disableSubmitButton && this.isRoot()) {
+      this.addButton('submit-answer', this.params.currikisettings.currikil10n.submitAnswer,  () => {
+            this.trigger(this.getXAPISubmittedEvent());
+            this.hideButton('submit-answer');
+         }, this.initialButtons.submit, {
+      }, {});
+    }
   }
 
   /**
@@ -273,6 +298,10 @@ export default class Crossword extends H5P.Question {
 
     if (this.params.behaviour.enableRetry) {
       this.showButton('try-again');
+    }
+
+    if (!this.params.currikisettings.disableSubmitButton && this.isRoot()) {
+      this.showButton('submit-answer');
     }
   }
 
@@ -385,6 +414,8 @@ export default class Crossword extends H5P.Question {
       this.hideButton('try-again');
     }
 
+    this.hideButton('submit-answer');
+
     this.trigger('resize');
 
     this.removeFeedback();
@@ -412,6 +443,19 @@ export default class Crossword extends H5P.Question {
     const xAPIEvent = this.createXAPIEvent('answered');
     xAPIEvent.setScoredResult(this.getScore(), this.getMaxScore(), this,
       true, this.isPassed());
+    xAPIEvent.data.statement.result.response = this.content.getXAPIResponse();
+
+    return xAPIEvent;
+  }
+
+  /**
+   * Build xAPI answer event.
+   * @returns {H5P.XAPIEvent} XAPI answer event.
+   */
+  getXAPISubmittedEvent() {
+    const xAPIEvent = this.createXAPIEvent('submitted-curriki');
+    xAPIEvent.setScoredResult(this.getScore(), this.getMaxScore(), this,
+        true, this.isPassed());
     xAPIEvent.data.statement.result.response = this.content.getXAPIResponse();
 
     return xAPIEvent;
