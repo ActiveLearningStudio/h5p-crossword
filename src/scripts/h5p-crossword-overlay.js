@@ -140,7 +140,7 @@ export default class Overlay {
    */
   show() {
     if (!this.blockerAppended) {
-      this.container = document.body.querySelector('.h5p-container');
+      this.container = this.questionContainer;
       this.container.appendChild(this.blocker);
     }
     this.blockerAppended = true;
@@ -191,6 +191,10 @@ export default class Overlay {
     if (this.container) {
       this.content.style.maxHeight = `calc(${this.container.offsetHeight}px - ${Overlay.CONTENT_MARGIN})`;
     }
+  }
+
+  setContainer($questionContainer) {
+    this.questionContainer = $questionContainer;
   }
 }
 

@@ -142,6 +142,23 @@ export default class Crossword extends H5P.Question {
         this.showButton('submit-answer');
       }
     });
+
+    /**
+     * Overrides the attach method of the superclass (H5P.Question) and calls it
+     * at the same time. (equivalent to super.attach($container)).
+     * This is necessary, as Ractive needs to be initialized with an existing DOM
+     * element. DOM elements are created in H5P.Question.attach, so initializing
+     * Reactive in registerDomElements doesn't work.
+     */
+    var self = this;
+    this.attach = ((original) => {
+      return ($container) => {
+        original($container);
+        if (self.content && self.content.inputarea && self.content.inputarea.overlay) {
+          self.content.inputarea.overlay.questionContainer = $container[0];
+        }
+      }
+    })(this.attach);
   }
 
   /**
